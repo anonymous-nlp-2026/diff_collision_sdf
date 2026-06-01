@@ -1,0 +1,33 @@
+\section{The Action-Collapsed Safety Problem}\label{sec:fake_safety}
+
+Standard CAR assumes that collision-free episodes reflect deliberate avoidance. This assumption is systematically violated: in every Pi0 configuration tested, over 99\% of collision-free episodes are action-collapse artifacts (Table~\ref{tab:fake_safety}).\footnote{Pi0-family values report obstacle displacement from the original protocol; Pi0.5 reports EE displacement from the rotation-corrected protocol (\S\ref{sec:dfcar}). Sub-millimeter displacement indicates action collapse in both cases.} Applying dfCAR collapses all three to ${\approx}$\,0\%. Pi0+A1 achieves the \emph{highest} raw CAR (91.5\%) because more complete action collapse (from a parameter-name mismatch preventing LoRA loading; Table~\ref{tab:configurations}) yields greater CAR inflation. Pi0.5 validates the metric from the opposite direction: every safe episode exceeds 200\,mm displacement, and dfCAR equals raw CAR (28.5\%). The displacement distribution is sharply bimodal (Appendix~\ref{sec:appendix_displacement}), with a five-order-of-magnitude gap that makes $\tau_d$ robust.
+
+\begin{table}[t]
+\centering
+\caption{Action-collapse decomposition on SafeLIBERO. dfCAR excludes episodes with displacement $< \tau_d = 0.1$\,mm. Pi0+A1 dfCAR$\,\approx\,$0: only 3/732 safe episodes exceed the threshold.}
+\label{tab:fake_safety}
+\vspace{2pt}
+\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+Method & Ep. & CAR (\%) & TSR (\%) & Collapsed (\%) & dfCAR (\%) \\
+\midrule
+Pi0 Full-FT  & 200 & 83.0 & 0.5 & 99.4 & $\approx$\,0 \\
+Pi0 LoRA     & 200 & 82.0 & 0.0 & ${\sim}$99 & $\approx$\,0 \\
+Pi0+A1 (SDF) & 800 & 91.5 & 0.0 & 99.6 & $\approx$\,0 \\
+\midrule
+Pi0.5  & 200 & 28.5 & 71.5 & 0.0 & 28.5 \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\begin{wrapfigure}{R}{0.5\linewidth}
+\centering
+\vspace{-12pt}
+\includegraphics[width=\linewidth]{fig_tsr_car_scatter.pdf}
+\caption{TSR vs.\ CAR for all configurations. Pi0-family models cluster in the upper-left (high CAR from inaction), Pi0.5 in the lower-right (high TSR with collision exposure), fine-tuned Pi0.5 in the center. The upper-right quadrant (high TSR and CAR) represents genuinely safe behavior. Error bars: $\pm$1 std across seeds.}
+\label{fig:tsr_car_scatter}
+\vspace{-8pt}
+\end{wrapfigure}
+Figure~\ref{fig:tsr_car_scatter} reveals spatial structure in the TSR-CAR plane.\label{sec:anticorrelation} Pi0-family models cluster in the upper-left (high CAR, near-zero TSR), Pi0.5 in the lower-right (high TSR, low CAR). The upper-right quadrant (high TSR \emph{and} CAR) represents genuinely safe behavior; the upper-left is accessible through action collapse alone. Under dfCAR, Pi0 configurations drop to the origin: the apparent safety-capability tradeoff was an artifact of action-collapse contamination.

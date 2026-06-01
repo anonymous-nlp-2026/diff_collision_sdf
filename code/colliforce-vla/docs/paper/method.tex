@@ -1,0 +1,42 @@
+\section{Experimental Setup and Metrics}\label{sec:method}
+
+\subsection{Benchmark and Models}\label{sec:benchmark}
+
+We evaluate on SafeLIBERO~\cite{hu2025vlsa}, the \textit{object\_pudding} suite (Level~II): four tabletop pick-and-place tasks with collision hazards and per-timestep collision detection. Two VLA families are tested: \textbf{Pi0} (${\sim}$2.5B)~\cite{black2024pi0} with flow matching~\cite{lipman2023flow}, and \textbf{Pi0.5} with broader pre-training. Table~\ref{tab:configurations} lists all configurations. Each uses 50 episodes per task (200 total); Pi0.5 multi-seed runs use 3 seeds (600 episodes). All metrics are computed using a fixed evaluation seed (seed\,=\,7); the reported $\pm$ values reflect variance across training seeds, not evaluation stochasticity. We report Collision Avoidance Rate (CAR), the fraction of collision-free episodes, and Task Success Rate (TSR), the fraction of episodes that complete the task~\cite{hu2025vlsa,zhang2025safevla}.
+
+\begin{table}[t]
+\centering
+\caption{Training configurations. Trainable parameters exclude the frozen backbone. Pi0+A1 LoRA weights were not loaded due to a parameter-name mismatch; only auxiliary heads were trained.}
+\label{tab:configurations}
+\vspace{2pt}
+\small
+\begin{tabular}{llr}
+\toprule
+Configuration & Description & Trainable Params \\
+\midrule
+Pi0 Full-FT & Full fine-tune, flow-matching loss & ${\sim}$2.5B \\
+Pi0 LoRA & LoRA adapters only & ${\sim}$33.5M \\
+Pi0+A1 (SDF aux) & LoRA + SDF decoder + EE extractor & ${\sim}$658K \\
+Pi0+A3 (learned SDF) & LoRA + SDF decoder w/ gradient refinement & ${\sim}$34.2M \\
+Pi0.5 (pre-trained) & No fine-tuning & 0 \\
+Pi0.5 LoRA & LoRA fine-tune on Pi0.5 & ${\sim}$33.5M \\
+Pi0.5+A1 (SDF aux) & LoRA + SDF aux on Pi0.5, $\lambda \in \{0.005, 0.01, 0.1\}$ & ${\sim}$34.2M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Displacement-Filtered CAR}\label{sec:dfcar}
+
+Standard CAR conflates genuine avoidance with action collapse. We define an episode as \emph{action-collapsed} when $d_{\max}(e) < \tau_d$ ($\tau_d = 0.1$\,mm) and exclude such episodes:
+\begin{equation}\label{eq:car_f}
+\text{dfCAR} = \frac{|\{e : \text{safe}(e) \;\land\; d_{\max}(e) \geq \tau_d\}|}{|\{e : d_{\max}(e) \geq \tau_d\}|}
+\end{equation}
+The displacement distribution is sharply bimodal, with collapsed episodes below 1\,$\mu$m and active episodes above 200\,mm; any $\tau_d \in [2, 200]$\,mm yields identical results (Appendix~\ref{sec:appendix_threshold}). For Pi0 under A1, $d_{\max}$ uses obstacle displacement (A1's parameter-loading failure produces an inconsistent EE reference frame); Pi0.5 uses standard EE displacement. The five-order-of-magnitude bimodal gap renders these measures functionally equivalent for collapse detection; alternative metrics (action variance, mean velocity, joint-space distance) would yield equivalent classification given this bimodal separation.
+
+\subsection{SDF Auxiliary Training and Oracle Refinement}\label{sec:sdf_aux}
+
+We augment LoRA-adapted~\cite{hu2022lora} VLAs with an SDF decoder and an EE position extractor (Appendix~\ref{sec:appendix_training}, Table~\ref{tab:hyperparams}). The total loss is:
+\begin{equation}\label{eq:total_loss}
+\mathcal{L}_\text{total} = \mathcal{L}_\text{action} + \lambda \left( \mathcal{L}_\text{SDF} + \mathcal{L}_\text{EE} \right)
+\end{equation}
+where $\lambda \in \{0.005, 0.01, 0.1\}$. In Pi0+A1, a parameter-name mismatch prevented LoRA loading and caused action collapse (TSR\,=\,0\%; Table~\ref{tab:configurations}). To test the upper bound of EE-only refinement (Section~\ref{sec:ee_only}), we also replace the learned SDF with ground-truth distance fields from the simulation geometry in three oracle variants (Appendix~\ref{sec:appendix_oracle}).\label{sec:oracle_setup}

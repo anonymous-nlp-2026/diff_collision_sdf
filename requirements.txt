@@ -1,0 +1,17 @@
+torch>=2.1
+torchvision
+jax
+transformers>=4.40
+accelerate
+einops
+scipy
+numpy
+matplotlib
+h5py
+pyarrow
+safetensors
+trimesh
+pysdf
+mujoco>=3.0
+lerobot
+Pillow

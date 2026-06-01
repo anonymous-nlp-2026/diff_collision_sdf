@@ -1,0 +1,50 @@
+\section{Avoidance Source Diagnosis}\label{sec:avoidance_source}
+
+Fine-tuning on collision-free demonstrations produces genuine collision avoidance: LoRA-adapted Pi0.5 raises CAR by ${\sim}$26 percentage points with zero action-collapsed episodes. Does SDF geometric supervision contribute additional avoidance beyond what demonstrations provide? We compare LoRA-only against LoRA+SDF across a 20$\times$ range of loss weights ($\lambda \in \{0.005, 0.01, 0.1\}$) on Pi0.5, all evaluated at the 30K-step checkpoint.
+
+\begin{table}[t]
+\centering
+\caption{Avoidance source attribution on SafeLIBERO. SDF shows no statistically significant CAR improvement beyond LoRA-only at the tested scale ($p > 0.05$ for $\lambda \in \{0.01, 0.1\}$). All fine-tuned models exhibit 0\% action-collapse rate and displacement $>$\,0.37\,m.}
+\label{tab:avoidance_source}
+\vspace{2pt}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Method & Seeds & TSR (\%) & CAR (\%) & EE Disp (m) \\
+\midrule
+Pi0.5 baseline & 1 & 71.5 & 28.5 & 0.367 \\
+\midrule
+LoRA-only (no SDF) & 3 & 51.5\,$\pm$\,0.0 & 54.67\,$\pm$\,2.02 & 0.391 \\
+LoRA+SDF $\lambda{=}0.005$ & 3 & 54.0\,$\pm$\,3.0 & 54.5\,$\pm$\,2.29 & 0.387 \\
+LoRA+SDF $\lambda{=}0.01$ & 3 & 53.8\,$\pm$\,1.5 & 56.33\,$\pm$\,1.61 & 0.389 \\
+LoRA+SDF $\lambda{=}0.1$ & 3 & 50.2\,$\pm$\,3.9 & 57.00\,$\pm$\,2.18 & 0.394 \\
+\bottomrule
+\end{tabular}
+\vspace{1pt}
+\end{table}
+
+Table~\ref{tab:avoidance_source} shows that collision-free demonstrations alone raise CAR by ${\sim}$26 percentage points (28.5\% $\to$ 54.67\%) with zero action-collapsed episodes and displacement above 0.37\,m, confirming genuine avoidance. Adding SDF supervision does not yield statistically significant improvement at the tested scale: LoRA-only CAR (54.67\%) is statistically indistinguishable from all SDF conditions including $\lambda = 0.1$ (57.00\%, $p = 0.131$; Appendix~\ref{sec:appendix_null}). A Phase~2 ablation ($\lambda = 0$ after step 5K) yields CAR\,=\,57.5\%\footnote{At the 18K checkpoint (13K steps of Phase~2 training, single seed s2); full 30K training did not complete due to disk constraints.}, suggesting that SDF gradients do not produce a lasting behavioral effect. The per-task CAR ordering is preserved across all conditions (chocolate\_pudding highest, bbq\_sauce lowest) and invariant to $\lambda$ across the tested range, indicating that avoidance patterns reflect the demonstration distribution rather than geometric supervision.
+
+\paragraph{CAR--TSR trade-off.}\label{sec:tsr_collapse}
+Fine-tuning degrades TSR by ${\sim}$18--20\,pp (71.5\% $\to$ 51.5--54.0\%), a consequence of distributional shift from the pre-trained prior rather than learned paralysis (all models retain $>$\,0.37\,m displacement and 0\% action-collapsed episodes). The SSR/TSR ratio increases from 0.39 (baseline) to 0.51--0.60 (Appendix~\ref{sec:appendix_ssr}): among task-completing episodes, a larger fraction avoids collisions after fine-tuning.
+
+\begin{wrapfigure}{R}{0.45\linewidth}
+\centering
+\vspace{-12pt}
+\includegraphics[width=\linewidth]{fig5_lambda_curve}
+\caption{Effect of SDF loss weight $\lambda$ on CAR and TSR. $\lambda = 0$: LoRA-only. The $\lambda \in \{0.01, 0.1\}$ values remain within the null band ($p > 0.05$), consistent with the absence of statistically significant improvement across a 20$\times$ loss-weight range.}
+\label{fig:lambda_car}
+\vspace{-8pt}
+\end{wrapfigure}
+\paragraph{Dose-response at higher loss weights.}\label{sec:lambda_high}
+Increasing $\lambda$ by 20$\times$ to 0.1 yields CAR\,=\,57.00\%\,$\pm$\,2.18 (3 seeds: 58.0\%, 58.5\%, 54.5\%), within the null distribution ($p = 0.131$\footnote{One-tailed $p = 0.071$; even with the directional prior that SDF should not \emph{decrease} CAR, the result remains non-significant.}; Figure~\ref{fig:lambda_car}). The binding constraint is not signal magnitude but the structural mismatch between EE monitoring and full-body collision surfaces.
+
+\paragraph{Robustness to null construction.}
+Pooling LoRA-only and $\lambda = 0.005$ seeds as null (Null~B, $\binom{9}{3} = 84$ permutations, $p = 0.131$) or using only LoRA-only seeds (Null~A, $\binom{6}{3} = 20$ permutations, $p = 0.300$) both yield non-significance at $\alpha = 0.05$.
+
+\paragraph{Statistical power.}
+With $n = 3$ seeds per group and $\sigma \approx 2.0$\,pp (LoRA cross-seed standard deviation), a two-sample $t$-test at $\alpha = 0.05$ (one-tailed) achieves 80\% power only for effects $\geq 5.0$\,pp. The observed effect of ${\sim}$2.3\,pp falls well below this minimum detectable effect (MDE), so the study is underpowered to detect a benefit of this magnitude.
+
+\paragraph{Evaluation-seed consistency.}
+Under matched evaluation conditions (Appendix~\ref{sec:appendix_eval_seed}), SDF $\lambda = 0.1$ yields higher CAR in all three paired eval seeds ($+$1.5, $+$2.5, $+$5.5\,pp), with lower cross-seed variance ($\sigma = 0.9$\,pp vs.\ 2.0\,pp for LoRA). The observed effect (${\sim}$2.3\,pp) falls below the MDE (${\sim}$5\,pp); whether this directional pattern reflects a genuine small benefit or residual confounding cannot be resolved at $n = 3$.
+
