@@ -1,4 +1,4 @@
-# Supplementary Material: ColliForce-VLA
+# How Action Collapse Creates Illusory Safety in Diffusion-Based VLA Collision Avoidance Evaluation
 
 Differentiable collision-aware action generation for Vision-Language-Action models via learned workspace Signed Distance Fields (SDF). This supplementary package provides code for reproducing the main experiments and figures reported in the paper.
 
